@@ -19,7 +19,7 @@ class SendShipmentCreatedEmail implements ShouldQueue
      */
     public function __construct(
         protected Shipment $shipment,
-        protected string $customerEmail
+        public string $customerEmail
     ) {}
 
     /**
