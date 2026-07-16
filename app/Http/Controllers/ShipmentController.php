@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreShipmentRequest;
 use App\Jobs\SendShipmentCreatedEmail;
+use App\Models\Shipment;
 use App\Services\ShipmentService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -28,5 +29,20 @@ class ShipmentController extends Controller
                 'error' => $e->getMessage()
             ], 422);
         }
+    }
+
+    public function index()
+    {
+        $shipments = Shipment::with('driver')->get();
+        // Transform them to include the driver's name
+        $data = $shipments->map(function ($shipment) {
+            return [
+                'tracking_number' => $shipment->tracking_number,
+                'status' => $shipment->status,
+                'driver_name' => $shipment->driver ? $shipment->driver->name : 'Unassigned',
+            ];
+        });
+
+        return response()->json($data);
     }
 }

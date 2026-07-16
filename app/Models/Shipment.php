@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shipment extends Model
 {
@@ -19,4 +20,9 @@ class Shipment extends Model
         'price',
         'driver_id'
     ];
+
+    public function driver(): BelongsTo 
+    {
+        return $this->belongsTo(User::class, 'driver_id');
+    }
 }
