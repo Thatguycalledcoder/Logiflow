@@ -4,14 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreShipmentRequest;
 use App\Jobs\SendShipmentCreatedEmail;
-use App\Models\Shipment;
-use App\Models\User;
 use App\Services\ShipmentService;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class ShipmentController extends Controller
 {
