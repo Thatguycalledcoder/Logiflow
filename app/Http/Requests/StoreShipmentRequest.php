@@ -27,6 +27,7 @@ class StoreShipmentRequest extends FormRequest
             'destination_address' => ['required', 'string', 'max:255'],
             'weight' => ['required', 'numeric', 'min:0.1'],
             'customer_email' => ['required', 'email'],
+            'shipping_type' => ['required', 'string', 'in:local,national,international'],
         ];
     }
 }

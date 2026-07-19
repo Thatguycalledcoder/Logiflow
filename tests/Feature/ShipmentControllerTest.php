@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\SendShipmentCreatedEmail;
+use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,6 +23,7 @@ test('a dispatcher can successfully book a shipment', function () {
         'destination_address' => '456 Warehouse Blvd, Dallas, TX',
         'weight' => 20.0, // expected price: 10 + (20 * 1.5) = 40.00
         'customer_email' => 'customer@logiflow.com',
+        "shipping_type" => "local"
     ];
 
     $response = $this->postJson('/api/shipments', $payload);
@@ -57,4 +59,31 @@ test('it returns validation errors with invalid payload', function () {
 
     $response->assertStatus(422)
         ->assertJsonValidationErrors(['origin_address', 'destination_address', 'weight', 'customer_email']);
+});
+
+test('it routes national shipments through the FedEx strategy', function () {
+    Queue::fake();
+
+    $payload = [
+        'origin_address' => 'Houston, TX',
+        'destination_address' => 'New York, NY',
+        'weight' => 10.0, // FedEx: 25.00 base + (10 * 0.80) = 33.00
+        'customer_email' => 'fedex-test@example.com',
+        'shipping_type' => 'national',
+    ];
+
+    $response = $this->postJson('/api/shipments', $payload);
+
+    $response->assertStatus(201);
+
+    // Verify database record has correct price calculation and tracking prefix
+    $this->assertDatabaseHas('shipments', [
+        'price' => 33.00,
+        'driver_id' => null, // FedEx shipments don't use internal driver resources
+    ]);
+
+    $shipment = Shipment::where('customer_email', 'not-existent-so-let-us-just-grab-latest')->latest()->first();
+    
+    // Assert tracking prefix matches the FedEx strategy output
+    expect($response->json('shipment.tracking_number'))->toStartWith('FDX-');
 });
