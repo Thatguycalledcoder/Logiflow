@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Services\Shipping\ShippingCarrierFactory;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class ShipmentService
@@ -14,34 +14,37 @@ class ShipmentService
         protected ShippingCarrierFactory $carrierFactory
     ) {}
 
-    /**
-     * Handle the full shipment creation process.
-     */
     public function createShipment(array $data): Shipment
     {
-        // 1. Resolve the strategy dynamically using the factory (e.g., 'local', 'national', 'international')
-        // We will expect 'shipping_type' to pass validation in our Form Request next
         $carrier = $this->carrierFactory->make($data['shipping_type']);
-
-        // 2. Delegate the calculation and tracking number generation to the strategy
         $price = $carrier->calculateRate($data['weight']);
         $trackingNumber = $carrier->bookShipment($data, $price);
 
-        // 3. If it's a local carrier, we can safely assign an internal driver id
         $driverId = null;
         if ($data['shipping_type'] === 'local') {
             $driver = User::where('role', 'driver')->first();
             $driverId = $driver?->id;
         }
 
-        return Shipment::create([
-            'tracking_number' => $trackingNumber,
-            'status' => 'pending',
-            'origin_address' => $data['origin_address'],
-            'destination_address' => $data['destination_address'],
-            'weight' => $data['weight'],
-            'price' => $price,
-            'driver_id' => $driverId,
-        ]);
+        // 🛡️ Wrap all interrelated database writes in a transaction block
+        return DB::transaction(function () use ($trackingNumber, $data, $price, $driverId) {
+            
+            // Write 1: Create the Shipment
+            $shipment = Shipment::create([
+                'tracking_number' => $trackingNumber,
+                'status' => 'pending',
+                'origin_address' => $data['origin_address'],
+                'destination_address' => $data['destination_address'],
+                'weight' => $data['weight'],
+                'price' => $price,
+                'driver_id' => $driverId,
+            ]);
+
+            // Write 2: Simulating an internal log or secondary record that might break
+            // (e.g., audit trails, multi-tenant billing logs, or status history tracking)
+            // If anything fails here, Write 1 is automatically rolled back!
+            
+            return $shipment;
+        });
     }
 }

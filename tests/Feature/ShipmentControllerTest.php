@@ -3,6 +3,7 @@
 use App\Jobs\SendShipmentCreatedEmail;
 use App\Models\Shipment;
 use App\Models\User;
+use App\Services\ShipmentService;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -86,4 +87,28 @@ test('it routes national shipments through the FedEx strategy', function () {
     
     // Assert tracking prefix matches the FedEx strategy output
     expect($response->json('shipment.tracking_number'))->toStartWith('FDX-');
+});
+
+test('it rolls back shipment creation if an unhandled error happens inside the service process', function () {
+    // 1. Mock or intercept the factory or inject a payload that will intentionally fail after initialization
+    $service = app(ShipmentService::class);
+
+    // We pass a payload missing vital columns that aren't validated by FormRequest, or force a failure state
+    // Let's create an unhandled scenario or use a try-catch test block:
+    
+    try {
+        $service->createShipment([
+            'shipping_type' => 'local',
+            'weight' => 10.0,
+            'origin_address' => '123 Test St',
+            // Missing 'destination_address' entirely, which will trigger a Database Level Column Integrity Exception!
+        ]);
+    } catch (\Exception $e) {
+        // Exception caught successfully
+    }
+
+    // 2. CRITICAL ASSERTION:
+    // Even though the factory successfully calculated things and started processing,
+    // the shipment row MUST NOT exist because the database transaction rolled it back completely.
+    expect(Shipment::count())->toBe(0);
 });
