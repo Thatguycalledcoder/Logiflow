@@ -22,7 +22,7 @@ test('it loads the shipments list without triggering N+1 queries', function () {
     DB::enableQueryLog();
 
     // 3. Hit our dashboard API
-    $response = $this->getJson('/api/shipments');
+    $response = $this->getJson('/api/v1/shipments');
 
     $response->assertStatus(200);
 

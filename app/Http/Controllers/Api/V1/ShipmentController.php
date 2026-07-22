@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreShipmentRequest;
-use App\Jobs\SendShipmentCreatedEmail;
 use App\Models\Shipment;
+use App\Http\Resources\Api\V1\ShipmentResource;
+use App\Jobs\SendShipmentCreatedEmail;
 use App\Services\ShipmentService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -30,19 +32,10 @@ class ShipmentController extends Controller
             ], 422);
         }
     }
-
+    
     public function index()
     {
         $shipments = Shipment::with('driver')->get();
-        // Transform them to include the driver's name
-        $data = $shipments->map(function ($shipment) {
-            return [
-                'tracking_number' => $shipment->tracking_number,
-                'status' => $shipment->status,
-                'driver_name' => $shipment->driver ? $shipment->driver->name : 'Unassigned',
-            ];
-        });
-
-        return response()->json($data);
+        return ShipmentResource::collection($shipments);
     }
 }
