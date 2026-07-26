@@ -1,58 +1,176 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+You are completely right—my apologies for confusing LogiFlow with the EduStream e-learning domain! Let's rewrite the README so it accurately reflects **LogiFlow** as an enterprise-grade **Shipment & Logistics Backend Engine**, highlighting the core domain models (`User`, `Shipment`), the architectural patterns, and testing coverage.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+# 📦 LogiFlow API — Enterprise Shipment & Logistics Platform
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**LogiFlow** is a high-performance, enterprise-grade backend service built with **Laravel**. It is engineered to handle complex logistics workflows, real-time shipment status tracking, dispatcher assignments, and automated delivery lifecycle updates with high concurrency and strict data consistency.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🏛️ Architectural Highlights
 
-## Learning Laravel
+The platform transitions traditional MVC patterns into a clean, decoupled **Domain-Driven & Action-Oriented Architecture**:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```
+Client Request
+      │
+      ▼
+ Form Request (Validation & Authorization)
+      │
+      ▼
+ Data Transfer Object (Immutable Data Contract)
+      │
+      ▼
+ Action / Domain Service (Business Logic & DB Transactions)
+      │
+      ▼
+ Custom Eloquent Builder / Scopes (Query Encapsulation)
+      │
+      ▼
+ API Resource (Strict Data Masking / Schema Decoupling)
+      │
+      ▼
+ JSON Response
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Key Engineering Patterns Applied:
 
-## Contributing
+1. **Immutable Data Transfer Objects (DTOs):**
+* Encapsulates shipment details, sender/recipient metadata, and payload metrics into strongly typed PHP `readonly` DTOs.
+* Guarantees immutable state across background workers and services.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-## Code of Conduct
+2. **Single-Responsibility Action Classes:**
+* Business processes (e.g., `CreateShipmentAction`, `AssignDispatcherAction`, `UpdateShipmentStatusAction`) are isolated into dedicated invokable classes.
+* Ensures status transitions occur safely within atomic **Database Transactions** (`DB::transaction()`).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+3. **Custom Eloquent Query Builders (`ShipmentBuilder`):**
+* Replaces bloated Repositories with custom query builder extensions.
+* Provides fluent, expressive domain queries:
+```php
+Shipment::query()
+    ->wherePending()
+    ->forCustomer($userId)
+    ->withLatestStatus()
+    ->get();
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+4. **API Resources as Firewalls:**
+* Protects internal database tables, raw tracking coordinates, and system flags from leaking to external clients.
+
+
+5. **Database Performance Guardrails:**
+* Global protection against N+1 query bugs via `Model::preventLazyLoading(! app()->isProduction())`.
+* Optimized database queries using indexed status lookups and eager-loaded relationship aggregations (`withCount()`, `with()`).
+
+
+
+---
+
+## 🚚 Domain Models & Relationships
+
+* **`User`**: Represents Customers, Dispatchers, Drivers, and System Administrators.
+* **`Shipment`**: The core domain entity representing parcel details, origin/destination coordinates, weight/dimensions, current status (`pending`, `in_transit`, `delivered`, `cancelled`), tracking numbers, and assigned drivers.
+
+---
+
+## 🧪 Rigorous Testing Suite
+
+LogiFlow prioritizes reliable backend behavior with comprehensive **Feature and Unit Test Suites** written using Pest / PHPUnit:
+
+* **Domain Unit Tests:** Validate DTO conversions, status state-machine transitions, and custom query builder scopes.
+* **Feature & Integration Tests:** Verify complete HTTP endpoints, form validation rules, database transaction rollbacks upon failures, and queue dispatching for tracking updates.
+
+```bash
+# Run the complete test suite
+php artisan test
+
+# Run tests in parallel for maximum speed
+php artisan test --parallel
+
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone & Install Dependencies
+
+```bash
+git clone https://github.com/your-username/logiflow.git
+cd logiflow
+
+composer install
+
+```
+
+### 2. Environment Configuration
+
+```bash
+cp .env.example .env
+php artisan key:generate
+
+```
+
+Set up your database and Redis configuration in `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=logiflow
+DB_USERNAME=root
+DB_PASSWORD=secret
+
+QUEUE_CONNECTION=redis
+CACHE_STORE=redis
+
+```
+
+### 3. Run Migrations & Database Seeders
+
+```bash
+php artisan migrate --seed
+
+```
+
+### 4. Serve the Application
+
+```bash
+php artisan serve
+
+```
+
+---
+
+## 📁 Directory Structure
+
+```
+app/
+├── Actions/                  # Domain Business Logic (e.g., CreateShipmentAction)
+│   └── Shipments/
+├── Builders/                 # Custom Eloquent Query Builders (e.g., ShipmentBuilder)
+├── DataTransferObjects/      # Immutable Request & Payload Mappings (e.g., ShipmentData)
+├── Http/
+│   ├── Controllers/          # Paper-thin HTTP Orchestrators
+│   ├── Requests/             # Input Validation Rules
+│   └── Resources/            # API Response Mappers
+├── Models/                   # Domain Models (User, Shipment)
+tests/
+├── Feature/                  # HTTP Endpoint & Pipeline Integration Tests
+└── Unit/                     # DTO, Builder, and Action Unit Tests
+
+```
+
+---
+
+## 📄 License
+
+This project is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
